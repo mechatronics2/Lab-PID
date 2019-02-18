@@ -74,9 +74,9 @@ static volatile uint16_t distance_highTime; //from Echo signal; used to calibrat
 static const float distance_filter_factor=0.5; //for part two
 
 // PID Controller Variables LOOK_HERE
-#define INITIAL_KP 1
-#define INITIAL_KD 1
-#define INITIAL_KI 1
+#define INITIAL_KP 200
+#define INITIAL_KD 20
+#define INITIAL_KI 20
 static volatile int16_t k_p, k_d, k_i;
 static volatile float integrator_val; // I term value, updated whenever PID control signal updates
 static volatile float distance_mm_intoPI; // output of distance-sensor-filter for part 2, is just distance_mm in part 1
@@ -455,12 +455,13 @@ void updatePIDController(){
         return;
     }
     //TODO: Update this in part two, when you filter your distance sensor's output:
-    distance_mm_intoPI = distance_mm;
+    //Need to define a. This formula is from Lab7 Overview ppt from last semester, L39
+    distance_mm_intoPI = (1-a)*distance_mm_into + a*enc_curspeed;
 
     //Todo: calc P, D, and I terms using the global K constants and relevant global sensor output values
-    int16_t D = -k_d*enc_curspeed/1000000;
-    int16_t P = k_p*(distance_mm_intoPI-setpoint)/10;
-    int16_t I = k_i*(integrator_val*i_decay_rate+distance_mm_intoPI-setpoint)/100;
+    int16_t D = -k_d*enc_curspeed/120000;
+    int16_t P = k_p*(distance_mm_intoPI)/10;
+    int16_t I = k_i*(integrator_val*i_decay_rate+distance_mm_intoPI)/100;
 
     integrator_val = I;
     bool sign = 0;
@@ -469,7 +470,7 @@ void updatePIDController(){
     }
     // TODO Set Motor Direction Pins (4.1 & 4.2 left, 4.3 & 4.4 right) to match the control signal's sign
 
-    driveIndefinitely(sign,abs(D+P+I));
+    driveIndefinitely(sign,abs((D+P+I)/(k_p+k_i+k_d)));
 
     // Set PWM Duty Cycles (percentages) as a saturating linear transformation of your control signal outputs
 }
