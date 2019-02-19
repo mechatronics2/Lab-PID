@@ -90,7 +90,7 @@ static volatile bool tuning_mode;
 static volatile uint16_t tuning_AlternateSetpoint; //(specifies which target you're not approaching; currently approaching setpoint (defined above))
 #define TUNING_SETPOINT_A 500 //TODO: Choose livetuning setpoints that make sense for your available space
 #define TUNING_SETPOINT_B 2000
-#define TUNING_TIME_PER_STEP 5 //in seconds, max is 32sec.
+#define TUNING_TIME_PER_STEP 10 //in seconds, max is 32sec.
 
 // Current Measurement Vars
 static volatile int16_t current;
@@ -454,9 +454,15 @@ void updatePIDController(){
     if(!chasing_setpoint){
         return;
     }
+
+    //very jittery
+    //distance_mm_intoPI = (distance_mm -setpoint);
+
+    // implement filter
     //TODO: Update this in part two, when you filter your distance sensor's output:
-    //Need to define a. This formula is from Lab7 Overview ppt from last semester, L39
-    distance_mm_intoPI = (1-a)*distance_mm_into + a*enc_curspeed;
+    //This formula is from Lab7 Overview ppt from last semester, L39
+    distance_mm_intoPI = (1-distance_filter_factor)*distance_mm_intoPI + distance_filter_factor*(distance_mm-setpoint);
+
 
     //Todo: calc P, D, and I terms using the global K constants and relevant global sensor output values
     int16_t D = -k_d*enc_curspeed/120000;
